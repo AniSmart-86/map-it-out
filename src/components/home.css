@@ -25,6 +25,12 @@ body {
   z-index: 1000;
 }
 
+.loading{
+  padding: 40px;
+  background-color: #272525;
+  color: #ddd;
+}
+
 .search-container input {
   width: 70%;
   padding: 10px;

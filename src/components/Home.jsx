@@ -148,7 +148,7 @@ const Home = () => {
   };
 
   if (!isLoaded) {
-    return <div>Loading...</div>;
+    return <div className='loading'>Loading... <br /> please wait</div>;
   }
 
   return (
