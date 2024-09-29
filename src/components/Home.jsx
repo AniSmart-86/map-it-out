@@ -1,6 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import './home.css';
-import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
+import { Circle, DirectionsRenderer, GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api';
+import { Spinner } from './Spinner';
+
 
 const mapContainerStyle = {
   height: '85vh',
@@ -12,6 +14,9 @@ const options = {
   zoomControl: true,
 };
 
+
+
+
 const API_KEY = import.meta.env.VITE_APP_MAP_API_KEY;
 
 const Home = () => {
@@ -20,12 +25,12 @@ const Home = () => {
   const [selectedType, setSelectedType] = useState(null); 
   const [searchQuery, setSearchQuery] = useState('');
   const [mapCenter, setMapCenter] = useState(null);
-
+  const [directions, setDirections] = useState(null);
   const mapRef = useRef(null);
   const serviceRef = useRef(null);
   const autocompleteRef = useRef(null);
   const inputRef = useRef(null);
-
+  
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: API_KEY,
     libraries: ['places'],
@@ -81,6 +86,7 @@ const Home = () => {
           setMapCenter(location);
          
           fetchPlaces(selectedType);
+          console.log(currentLocation);
         },
         (error) => {
           console.error('Error getting geolocation:', error);
@@ -115,6 +121,34 @@ const Home = () => {
     });
   };
 
+
+  useEffect(()=>{
+
+    const fetchDirections = async ()=>{
+      
+      const service = new google.maps.DirectionsService();
+
+
+
+    await  service.route(
+        {
+          origin: currentLocation,
+          destination: hospitals,
+          travelMode: google.maps.TravelMode.DRIVING,
+        },
+        (result, status) =>{
+          if(status === "OK" && result){
+            setDirections(result);
+          }
+        }
+      )
+    }
+    fetchDirections();
+  }, [])
+  
+
+
+
   const handleTypeChange = (label) => {
     let type = '';
 
@@ -148,8 +182,12 @@ const Home = () => {
   };
 
   if (!isLoaded) {
-    return <div className='loading'>Loading... <br /> please wait</div>;
+    return <div className="loading">
+      <Spinner />
+      </div>
   }
+
+ 
 
   return (
     <div className="container">
@@ -190,11 +228,12 @@ const Home = () => {
             Fire Station
           </button>
         </div>
+      
       </div>
       <div className="map-container">
         <GoogleMap
           mapContainerStyle={mapContainerStyle}
-          zoom={14}
+          zoom={15}
           center={mapCenter}
           options={options}
           onLoad={(map) => {
@@ -202,13 +241,28 @@ const Home = () => {
             serviceRef.current = new window.google.maps.places.PlacesService(map);
           }}
         >
+           {directions && (
+            <DirectionsRenderer directions={directions} />)}
+         
           {currentLocation && (
+          <>
             <Marker
               position={currentLocation}
               icon={{
                 url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
               }}
+             
             />
+           
+          
+             <Circle center={currentLocation}
+              radius={400} options={closeOptions}/>
+             <Circle center={currentLocation}
+              radius={700} options={middleOptions}/>
+             <Circle center={currentLocation}
+              radius={1000} options={farOptions}/>
+             
+          </>
           )}
           {places.map((place) => (
             <Marker
@@ -227,3 +281,41 @@ const Home = () => {
 };
 
 export default Home;
+
+
+
+const defaultOptions = {
+  strokeOpacity: 0.5,
+  strokeWeight: 2,
+  clickable: false,
+  draggable: false,
+  editable: false,
+  visible: true,
+};
+
+const closeOptions ={
+  ...defaultOptions,
+  zIndex: 3,
+  fillOpacity: 0.05,
+  strokeColor: "#8BC34A",
+  fillColor: "#8BC34A"
+};
+
+const middleOptions ={
+  ...defaultOptions,
+  zIndex: 2,
+  fillOpacity: 0.05,
+  strokeColor: "#FBC02D",
+  fillColor: "#FBC02D"
+};
+
+const farOptions ={
+  ...defaultOptions,
+  zIndex: 1,
+  fillOpacity: 0.05,
+  strokeColor: "#FF5252",
+  fillColor: "#FF5252"
+};
+
+
+
